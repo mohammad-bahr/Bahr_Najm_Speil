@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>📅 Monate Spiel</title>
+
+<style>
+body {
+    text-align: center;
+    font-family: Arial;
+    background: linear-gradient(135deg, #ffecd2, #fcb69f);
+}
+
+.box {
+    background: white;
+    padding: 25px;
+    margin: 40px auto;
+    width: 90%;
+    max-width: 750px;
+    border-radius: 20px;
+}
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.month {
+    width: 110px;
+    height: 70px;
+    margin: 8px;
+    border-radius: 12px;
+    border: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    color: white;
+    font-weight: bold;
+}
+
+.slot {
+    width: 110px;
+    height: 70px;
+    margin: 8px;
+    border: 2px dashed #aaa;
+    border-radius: 12px;
+}
+
+.slot.correct {
+    background: #d4ffd4;
+    border-color: green;
+}
+
+/* 🎭 ANIMATION */
+@keyframes jump {
+    0% {transform: translateY(0);}
+    50% {transform: translateY(-10px);}
+    100% {transform: translateY(0);}
+}
+
+@keyframes shake {
+    0% {transform: translateX(0);}
+    25% {transform: translateX(-5px);}
+    50% {transform: translateX(5px);}
+    75% {transform: translateX(-5px);}
+    100% {transform: translateX(0);}
+}
+
+.correctAnim { animation: jump 0.4s; }
+.wrongAnim { animation: shake 0.4s; }
+
+button {
+    padding: 10px 15px;
+    margin: 5px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>📅 Monate Spiel</h1>
+
+<div class="box">
+
+<button onclick="startGame()">🧩 Monate</button> <button onclick="startSeasons()">👶 Jahreszeiten</button> <button onclick="startQuiz()">🧠 Quiz</button> <button onclick="showInfo()">📖 Lernen</button> <button onclick="showHint()">💡 Hinweis</button> <button onclick="goBack()">⬅️ Zurück</button>
+
+<p id="result"></p>
+
+<div id="game" style="display:none;">
+    <p>Ziehe in die richtige Reihenfolge 👇</p>
+    <div id="dropzone" class="container"></div>
+    <hr>
+    <div id="months" class="container"></div>
+</div>
+
+<div id="info"></div>
+
+</div>
+
+<!-- 🎵 MUSIC -->
+
+<audio id="bgm" src="sounds/music.mp3" loop></audio>
+
+<!-- 🎆 CONFETTI -->
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+// ================= DATA =================
+const months = [
+"Januar","Februar","März","April","Mai","Juni",
+"Juli","August","September","Oktober","November","Dezember"
+];
+
+const seasons = ["Frühling 🌸","Sommer ☀️","Herbst 🍂","Winter ❄️"];
+
+const daysInMonth = {
+"Januar":31,"Februar":28,"März":31,"April":30,"Mai":31,"Juni":30,
+"Juli":31,"August":31,"September":30,"Oktober":31,"November":30,"Dezember":31
+};
+
+const meanings = {
+"Januar":"Nach Janus 👑",
+"Februar":"Reinigung 🧼",
+"März":"Mars ⚔️",
+"April":"Blumen 🌸",
+"Mai":"Maia 🌼",
+"Juni":"Juno 👑",
+"Juli":"Julius Caesar 🏛️",
+"August":"Augustus 👑",
+"September":"7️⃣",
+"Oktober":"8️⃣",
+"November":"9️⃣",
+"Dezember":"🔟"
+};
+
+// ================= VOICE =================
+function speak(text) {
+    let msg = new SpeechSynthesisUtterance(text);
+    msg.lang = "de-DE";
+    speechSynthesis.speak(msg);
+}
+
+// ================= START =================
+function startGame() {
+    document.getElementById("game").style.display = "block";
+    document.getElementById("info").innerHTML = "";
+    document.getElementById("result").innerText = "";
+
+    document.getElementById("bgm").play().catch(()=>{});
+
+    let shuffled = [...months].sort(() => Math.random() - 0.5);
+
+    createSlots(months);
+    createItems(shuffled);
+}
+
+// ================= SEASONS =================
+function startSeasons() {
+    document.getElementById("game").style.display = "block";
+    document.getElementById("info").innerHTML = "";
+
+    let shuffled = [...seasons].sort(() => Math.random() - 0.5);
+
+    createSlots(seasons);
+    createItems(shuffled);
+}
+
+// ================= CREATE =================
+function createSlots(list) {
+    let html = "";
+    for (let i = 0; i < list.length; i++) {
+        html += `<div class="slot" data-index="${i}"></div>`;
+    }
+    document.getElementById("dropzone").innerHTML = html;
+
+    document.querySelectorAll(".slot").forEach(slot => {
+        slot.addEventListener("dragover", e => e.preventDefault());
+
+        slot.addEventListener("drop", e => {
+            e.preventDefault();
+
+            const id = e.dataTransfer.getData("text");
+            const el = document.getElementById(id);
+            const index = slot.dataset.index;
+
+            let correctList = (months.includes(el.innerText)) ? months : seasons;
+
+            if (el.innerText === correctList[index]) {
+                slot.appendChild(el);
+                slot.classList.add("correct","correctAnim");
+
+                confetti({particleCount:80,spread:70});
+
+                checkGame(correctList);
+            } else {
+                el.classList.add("wrongAnim");
+                setTimeout(()=>el.classList.remove("wrongAnim"),400);
+
+                document.getElementById("result").innerText = "❌ Versuch nochmal!";
+            }
+        });
+    });
+}
+
+function createItems(list) {
+    let html = "";
+    list.forEach((item, i) => {
+        html += `<div class="month" draggable="true"
+        style="background:hsl(${i*30},70%,60%)"
+        id="m${i}">${item}</div>`;
+    });
+
+    document.getElementById("months").innerHTML = html;
+
+    document.querySelectorAll(".month").forEach(el => {
+        el.addEventListener("dragstart", e => {
+            e.dataTransfer.setData("text", el.id);
+            speak(el.innerText);
+        });
+    });
+}
+
+// ================= CHECK =================
+function checkGame(list) {
+    let placed = document.querySelectorAll(".slot .month").length;
+
+    if (placed !== list.length) return;
+
+    document.getElementById("result").innerText = "🎉 Super!";
+    confetti({particleCount:120,spread:90});
+}
+
+// ================= HINT =================
+function showHint() {
+    let slots = document.querySelectorAll(".slot");
+
+    for (let i = 0; i < slots.length; i++) {
+        if (!slots[i].firstChild) {
+            alert("👉 " + months[i]);
+            speak(months[i]);
+            break;
+        }
+    }
+}
+
+// ================= INFO =================
+function showInfo() {
+    let html = "<h3>📚 Lernen:</h3>";
+
+    months.forEach(m => {
+        html += `<p><b>${m}</b>: ${daysInMonth[m]} Tage | ${meanings[m]}</p>`;
+    });
+
+    html += "<hr>";
+    html += "<p>📅 12 Monate im Jahr</p>";
+    html += "<p>⏰ 365 Tage im Jahr</p>";
+
+    document.getElementById("info").innerHTML = html;
+    document.getElementById("game").style.display = "none";
+}
+
+// ================= QUIZ =================
+function startQuiz() {
+    let frage = "Welcher Monat hat 30 Tage?";
+    let antworten = ["April","Juni","September","November","Februar"];
+
+    let html = "<h3>"+frage+"</h3>";
+
+    antworten.forEach(a => {
+        html += `<button onclick="checkQuiz('${a}')">${a}</button>`;
+    });
+
+    document.getElementById("info").innerHTML = html;
+}
+
+function checkQuiz(a) {
+    if (["April","Juni","September","November"].includes(a)) {
+        alert("🎉 Richtig!");
+        confetti({particleCount:80,spread:60});
+    } else {
+        alert("❌ Falsch!");
+    }
+}
+
+// ================= BACK =================
+function goBack() {
+    window.location.href = "dashboard.html";
+}
+</script>
+
+</body>
+</html>

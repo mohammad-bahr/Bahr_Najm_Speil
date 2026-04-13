@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spiele Auswahl</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+            margin: 0;
+            padding: 20px;
+            /* Für Kinderhände optimiert */
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-top: 30px;
+            color: #333;
+        }
+
+        .box {
+            background: white;
+            padding: 30px;
+            margin: 30px auto;
+            max-width: 300px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            margin: 15px 0;
+            font-size: 22px;
+            border-radius: 15px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px #2e7d32;
+            transition: all 0.1s;
+        }
+
+        /* Effekt beim Drauftippen */
+        button:active {
+            box-shadow: 0 2px #2e7d32;
+            transform: translateY(3px);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            color: #333;
+            text-decoration: none;
+            font-size: 18px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🎮 Spiele auswählen</h1>
+
+    <div class="box">
+        <button onclick="location.href='math.html'">
+            ➕➖ Mathe Spiel
+        </button>
+
+        <button onclick="location.href='guess.html'">
+            🎯 Guess the Number
+        </button>
+    </div>
+
+    <a href="dashboard.html" class="back-link">⬅ Zurück</a>
+
+    <script>
+        // Kleiner Sicherheitscheck: Wenn kein Name gespeichert ist, zurück zum Login
+        // (Wichtig, falls das Kind die App über diese Seite startet)
+        if (!localStorage.getItem('kindName')) {
+            window.location.href = "login.html";
+        }
+    </script>
+
+</body>
+</html>

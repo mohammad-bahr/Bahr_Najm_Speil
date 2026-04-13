@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zahlen raten</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #fbc2eb, #a6c1ee);
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .box {
+            background: white;
+            padding: 25px;
+            margin: 20px auto;
+            max-width: 300px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        input {
+            font-size: 24px;
+            padding: 12px;
+            width: 100px;
+            text-align: center;
+            border-radius: 10px;
+            border: 2px solid #ccc;
+            margin: 10px 0;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 20px;
+            border-radius: 12px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px #2e7d32;
+        }
+
+        button:active { transform: translateY(2px); box-shadow: 0 2px #2e7d32; }
+
+        #result { font-size: 22px; margin: 15px 0; min-height: 30px; }
+
+        .back-link { display: inline-block; margin-top: 20px; color: #333; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+    <h1>🎯 Guess the Number</h1>
+
+    <div class="box">
+        <p>Rate eine Zahl zwischen 1 und 100</p>
+        <input type="number" id="guess" pattern="\d*">
+        <br>
+        <button onclick="checkGuess()">OK</button>
+        <p id="result"></p>
+        <p>🔢 Versuche: <span id="tries">0</span></p>
+    </div>
+
+    <audio id="ok" src="sounds/success.mp3"></audio>
+    <audio id="fail" src="sounds/error.mp3"></audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        let number = Math.floor(Math.random() * 100) + 1;
+        let tries = 0;
+
+        function speak(text) {
+            let msg = new SpeechSynthesisUtterance(text);
+            msg.lang = "de-DE";
+            window.speechSynthesis.speak(msg);
+        }
+
+        function checkGuess() {
+            let user = document.getElementById("guess").value;
+            if (user === "") return;
+            tries++;
+            document.getElementById("tries").innerText = tries;
+
+            if (user == number) {
+                document.getElementById("result").innerText = "🎉 Richtig!";
+                document.getElementById("ok").play().catch(()=>{});
+                speak("Richtig! Sehr gut! Ahsanta Ya Warrad");
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                // Nach 3 Sekunden neues Spiel starten
+                setTimeout(() => { location.reload(); }, 3000);
+            } else if (user < number) {
+                document.getElementById("result").innerText = "🔼 Zu klein!";
+                document.getElementById("fail").play().catch(()=>{});
+                speak("Zu klein!");
+            } else {
+                document.getElementById("result").innerText = "🔽 Zu groß!";
+                document.getElementById("fail").play().catch(()=>{});
+                speak("Zu groß!");
+            }
+            document.getElementById("guess").value = "";
+            document.getElementById("guess").focus();
+        }
+
+        document.getElementById("guess").addEventListener("keypress", (e) => { if (e.key === "Enter") checkGuess(); });
+    </script>
+
+    <br>
+    <a href="games.html" class="back-link">⬅ Zurück</a>
+</body>
+</html>

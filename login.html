@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Willkommen</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            /* Verhindert Markieren und Zoomen für Kinder-Hände */
+            user-select: none;
+            touch-action: manipulation;
+        }
+        .box {
+            margin-top: 80px;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            display: inline-block;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        input {
+            padding: 12px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: 2px solid #ccc;
+            width: 80%;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 10px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 4px #2e7d32;
+        }
+        button:active {
+            box-shadow: 0 2px #2e7d32;
+            transform: translateY(2px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>👋 Hallo!</h2>
+    <p>Wie heißt du? Schreib deinen Namen hier rein 😊</p>
+
+    <input type="text" id="nameInput" placeholder="Dein Name">
+    <br>
+    <button onclick="starteSpiel()">🌟 Los geht's!</button>
+</div>
+
+<script>
+function starteSpiel() {
+    const nameInput = document.getElementById('nameInput').value.trim();
+    
+    if (nameInput === "") {
+        alert("Bitte schreib zuerst deinen Namen! ❤️");
+        return;
+    }
+
+    // 🌈 Namen → Bilder (Deine Logik aus PHP)
+    const bilder = {
+        "bahr": "bahhora.jpg",
+        "najm": "najjomeh.jpg",
+        "mia": "kind2.png"
+    };
+
+    const key = nameInput.toLowerCase();
+    const photo = bilder[key] || "default.png";
+
+    // 😊 Name schön formatieren (erster Buchstabe groß)
+    const schoenerName = nameInput.charAt(0).toUpperCase() + nameInput.slice(1);
+
+    // 💾 Daten im Handy speichern (statt PHP Session)
+    localStorage.setItem('kindName', schoenerName);
+    localStorage.setItem('kindPhoto', photo);
+
+    // 🚀 Weiter zum Dashboard
+    window.location.href = "dashboard.html";
+}
+</script>
+
+</body>
+</html>

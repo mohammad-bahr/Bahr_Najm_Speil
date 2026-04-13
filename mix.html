@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+    text-align: center;
+    font-family: Arial;
+    background: linear-gradient(135deg, #d4fc79, #96e6a1);
+}
+
+.box {
+    background: white;
+    padding: 30px;
+    margin: 50px auto;
+    width: 350px;
+    border-radius: 15px;
+}
+
+.color {
+    width: 80px;
+    height: 80px;
+    display: inline-block;
+    margin: 10px;
+    border-radius: 10px;
+}
+
+.answer-btn {
+    padding: 10px 15px;
+    margin: 5px;
+    border: none;
+    border-radius: 10px;
+    background: #4CAF50;
+    color: white;
+}
+.color {
+    width: 80px;
+    height: 80px;
+    display: inline-block;
+    margin: 10px;
+    border-radius: 10px;
+    border: 2px solid #333;   /* 👈 NEU */
+}
+</style>
+</head>
+
+<body>
+
+<h1>🧪 Farben mischen</h1>
+
+<div class="box">
+
+<p>Welche Farbe entsteht?</p>
+
+<div id="c1" class="color"></div>
+<div id="c2" class="color"></div>
+
+<p id="result"></p>
+
+<div id="answers"></div>
+
+<p>⭐ Punkte: <span id="score">0</span></p>
+
+</div>
+
+<audio id="ok" src="sounds/success.mp3"></audio>
+<audio id="fail" src="sounds/error.mp3"></audio>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+let mixes = [
+    {a:"red", b:"yellow", result:"orange"},
+    {a:"yellow", b:"red", result:"orange"},
+
+    {a:"blue", b:"yellow", result:"green"},
+    {a:"yellow", b:"blue", result:"green"},
+
+    {a:"red", b:"blue", result:"purple"},
+    {a:"blue", b:"red", result:"purple"},
+
+    {a:"white", b:"black", result:"gray"},
+    {a:"black", b:"white", result:"gray"},
+
+    // 🎨 neue einfache Kombinationen
+    {a:"red", b:"white", result:"pink"},
+    {a:"white", b:"red", result:"pink"},
+
+    {a:"blue", b:"white", result:"lightblue"},
+    {a:"white", b:"blue", result:"lightblue"},
+
+    {a:"yellow", b:"white", result:"lightyellow"},
+    {a:"white", b:"yellow", result:"lightyellow"},
+
+    // gleiche Farben (leicht für Kinder)
+    {a:"red", b:"red", result:"red"},
+    {a:"blue", b:"blue", result:"blue"},
+    {a:"yellow", b:"yellow", result:"yellow"}
+];
+
+let names = {
+    red:"ROT", blue:"BLAU", yellow:"GELB",
+    green:"GRÜN", orange:"ORANGE", purple:"LILA",
+    white:"WEISS", black:"SCHWARZ", gray:"GRAU",
+
+    pink:"ROSA",
+    lightblue:"HELLBLAU",
+    lightyellow:"HELLGELB"
+};
+
+let score = 0;
+let current;
+
+// 🎉 Konfetti
+function fireConfetti() {
+    if (typeof confetti === "function") {
+        confetti({ particleCount: 80, spread: 70 });
+    }
+}
+
+// 🔊 Stimme
+function speak(text) {
+    let msg = new SpeechSynthesisUtterance(text);
+    msg.lang = "de-DE";
+    speechSynthesis.speak(msg);
+}
+
+function newRound() {
+    current = mixes[Math.floor(Math.random() * mixes.length)];
+
+    document.getElementById("c1").style.background = current.a;
+    document.getElementById("c2").style.background = current.b;
+
+    let options = ["orange","green","purple","gray","pink","lightblue","lightyellow","red","blue","yellow"];
+    options = options.sort(() => Math.random() - 0.5);
+
+    let html = "";
+    options.forEach(o => {
+        html += `<button class="answer-btn" onclick="check('${o}')">${names[o]}</button>`;
+    });
+
+    document.getElementById("answers").innerHTML = html;
+}
+
+// 👉 prüfen
+function check(choice) {
+
+    if (choice === current.result) {
+        document.getElementById("result").innerText = "🎉 Richtig!";
+        document.getElementById("ok").play().catch(()=>{});
+        speak("Richtig!");
+
+        score++;
+        fireConfetti();
+
+    } else {
+        document.getElementById("result").innerText = "❌ Falsch!";
+        document.getElementById("fail").play().catch(()=>{});
+        speak("Nochmal!");
+    }
+
+    document.getElementById("score").innerText = score;
+
+    setTimeout(newRound, 1000);
+}
+
+// Start
+newRound();
+</script>
+
+<br><br>
+<a href="colors.html">⬅ Zurück</a>
+
+</body>
+</html>

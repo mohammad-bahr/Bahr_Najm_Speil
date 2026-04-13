@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>🪐 Planeten Spiel</title>
+
+<style>
+body {
+    text-align: center;
+    font-family: Arial;
+    background: radial-gradient(circle, #000428, #004e92);
+    color: white;
+}
+
+.box {
+    background: rgba(255,255,255,0.1);
+    padding: 25px;
+    margin: 40px auto;
+    width: 90%;
+    max-width: 900px;
+    border-radius: 20px;
+}
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* 🛰️ ROTATION */
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 🌌 ORBIT */
+.orbit-container {
+    position: relative;
+    width: 320px;
+    height: 320px;
+    margin: 20px auto;
+}
+
+.sun {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: yellow;
+    border-radius: 50%;
+    top: 120px;
+    left: 120px;
+}
+
+.orbit {
+    position: absolute;
+    border: 1px dashed rgba(255,255,255,0.3);
+    border-radius: 50%;
+    animation: spin linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.orbit div {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    background-size: cover;
+}
+
+/* PLANETS */
+.planet {
+    width: 100px;
+    height: 100px;
+    margin: 10px;
+    border-radius: 50%;
+    cursor: grab;
+    background-size: cover;
+    background-position: center;
+    animation: rotate 10s linear infinite;
+    transition: transform 0.3s;
+}
+
+.planet:hover {
+    transform: scale(1.1);
+}
+
+.slot {
+    width: 100px;
+    height: 100px;
+    margin: 10px;
+    border: 2px dashed #aaa;
+    border-radius: 50%;
+}
+
+.slot.correct {
+    border-color: lime;
+    background: rgba(0,255,0,0.2);
+}
+
+button {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>🪐 Planeten Spiel</h1>
+
+<div class="box">
+
+<button onclick="setLevel(1)">😊 Easy</button> <button onclick="setLevel(2)">😎 Medium</button> <button onclick="setLevel(3)">🔥 Hard</button>
+
+<br><br>
+
+<button onclick="startGame()">🧩 Start</button> <button onclick="showOrbit()">🌌 Orbit</button> <button onclick="showInfo()">📖 Lernen</button> <button onclick="goBack()">⬅️ Zurück</button>
+
+<p id="result"></p>
+
+<div id="game" style="display:none;">
+    <p>Ordne die Planeten von der Sonne 🌞</p>
+    <div id="dropzone" class="container"></div>
+    <hr>
+    <div id="planets" class="container"></div>
+</div>
+
+<div id="info"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+// ================= DATA =================
+const allPlanets = [
+"Merkur","Venus","Erde","Mars",
+"Jupiter","Saturn","Uranus","Neptun"
+];
+
+const images = {
+"Merkur":"https://upload.wikimedia.org/wikipedia/commons/4/4a/Mercury_in_true_color.jpg",
+"Venus":"https://upload.wikimedia.org/wikipedia/commons/e/e5/Venus-real_color.jpg",
+"Erde":"https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg",
+"Mars":"https://upload.wikimedia.org/wikipedia/commons/0/02/OSIRIS_Mars_true_color.jpg",
+"Jupiter":"https://upload.wikimedia.org/wikipedia/commons/e/e2/Jupiter.jpg",
+"Saturn":"https://upload.wikimedia.org/wikipedia/commons/c/c7/Saturn_during_Equinox.jpg",
+"Uranus":"https://upload.wikimedia.org/wikipedia/commons/3/3d/Uranus2.jpg",
+"Neptun":"https://upload.wikimedia.org/wikipedia/commons/5/56/Neptune_Full.jpg"
+};
+
+let level = 1;
+let currentPlanets = [];
+
+// ================= LEVEL =================
+function setLevel(l) {
+    level = l;
+    alert("Level: " + l);
+}
+
+// ================= START =================
+function startGame() {
+    document.getElementById("game").style.display = "block";
+    document.getElementById("info").innerHTML = "";
+    document.getElementById("result").innerText = "";
+
+    if (level === 1) currentPlanets = allPlanets.slice(0,4);
+    else if (level === 2) currentPlanets = allPlanets.slice(0,6);
+    else currentPlanets = allPlanets;
+
+    let shuffled = [...currentPlanets].sort(() => Math.random() - 0.5);
+
+    createSlots();
+    createPlanets(shuffled);
+}
+
+// ================= CREATE =================
+function createSlots() {
+    let html = "";
+    for (let i = 0; i < currentPlanets.length; i++) {
+        html += `<div class="slot" data-index="${i}"></div>`;
+    }
+    document.getElementById("dropzone").innerHTML = html;
+
+    document.querySelectorAll(".slot").forEach(slot => {
+        slot.addEventListener("dragover", e => e.preventDefault());
+
+        slot.addEventListener("drop", e => {
+            e.preventDefault();
+
+            const id = e.dataTransfer.getData("text");
+            const el = document.getElementById(id);
+            const index = slot.dataset.index;
+
+            if (el.dataset.name === currentPlanets[index]) {
+                slot.appendChild(el);
+
+                // 🎭 ANIMATION
+                el.style.transform = "scale(1.2)";
+                setTimeout(() => el.style.transform = "scale(1)", 200);
+
+                slot.classList.add("correct");
+                confetti({particleCount:60,spread:60});
+
+                checkGame();
+            } else {
+                document.getElementById("result").innerText = "❌ Falsch!";
+            }
+        });
+    });
+}
+
+function createPlanets(list) {
+    let html = "";
+    list.forEach((p, i) => {
+        html += `<div class="planet"
+        draggable="true"
+        data-name="${p}"
+        style="background-image:url('${images[p]}')"
+        id="p${i}"></div>`;
+    });
+
+    document.getElementById("planets").innerHTML = html;
+
+    document.querySelectorAll(".planet").forEach(el => {
+        el.addEventListener("dragstart", e => {
+            e.dataTransfer.setData("text", el.id);
+        });
+    });
+}
+
+// ================= CHECK =================
+function checkGame() {
+    let placed = document.querySelectorAll(".slot .planet").length;
+
+    if (placed !== currentPlanets.length) return;
+
+    document.getElementById("result").innerText = "🎉 Perfekt!";
+    confetti({particleCount:120,spread:80});
+}
+
+// ================= ORBIT =================
+function showOrbit() {
+    let html = '<div class="orbit-container"><div class="sun"></div>';
+
+    currentPlanets.forEach((p, i) => {
+        let size = 130 + (i * 30);
+
+        html += `
+        <div class="orbit"
+        style="
+            width:${size}px;
+            height:${size}px;
+            top:${160 - size/2}px;
+            left:${160 - size/2}px;
+            animation-duration:${5 + i*2}s;
+        ">
+            <div style="background-image:url('${images[p]}')"></div>
+        </div>`;
+    });
+
+    html += '</div>';
+
+    document.getElementById("info").innerHTML = html;
+}
+
+// ================= INFO =================
+function showInfo() {
+    let html = "<h3>📚 Planeten:</h3>";
+
+    allPlanets.forEach(p => {
+        html += `<p>${p}</p>`;
+    });
+
+    document.getElementById("info").innerHTML = html;
+}
+
+// ================= BACK =================
+function goBack() {
+    window.location.href = "dashboard.html";
+}
+//================== Namen ================
+function showInfo() {
+    let html = "<h2>🪐 Warum heißen die Planeten so?</h2>";
+
+    const planetInfo = [
+        {
+            name: "Merkur",
+            text: "Benannt nach dem römischen Götterboten, weil er sich sehr schnell um die Sonne bewegt."
+        },
+        {
+            name: "Venus",
+            text: "Benannt nach der Göttin der Liebe und Schönheit, weil sie sehr hell und schön am Himmel leuchtet."
+        },
+        {
+            name: "Erde",
+            text: "Der Name kommt aus alten Sprachen und bedeutet 'Boden' oder 'Land'. Kein Gott!"
+        },
+        {
+            name: "Mars",
+            text: "Benannt nach dem Kriegsgott, weil der Planet rot ist (wie Blut)."
+        },
+        {
+            name: "Jupiter",
+            text: "Benannt nach dem mächtigsten Gott, weil er der größte Planet ist."
+        },
+        {
+            name: "Saturn",
+            text: "Benannt nach dem Gott der Ernte und Zeit."
+        },
+        {
+            name: "Uranus",
+            text: "Benannt nach dem griechischen Himmelsgott."
+        },
+        {
+            name: "Neptun",
+            text: "Benannt nach dem Meeresgott, wegen seiner blauen Farbe."
+        }
+    ];
+
+    planetInfo.forEach(p => {
+        html += `
+        <div style="
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            margin: 10px;
+            border-radius: 15px;
+        ">
+            <h3>${p.name}</h3>
+            <p>${p.text}</p>
+        </div>
+        `;
+    });
+
+    document.getElementById("info").innerHTML = html;
+}
+
+</script>
+
+</body>
+</html>

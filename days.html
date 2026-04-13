@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>📅 Tage Super Spiel</title>
+
+<style>
+body {
+    text-align: center;
+    font-family: Arial;
+    background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+}
+
+.box {
+    background: white;
+    padding: 25px;
+    margin: 40px auto;
+    width: 90%;
+    max-width: 700px;
+    border-radius: 15px;
+}
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.day {
+    width: 90px;
+    height: 60px;
+    margin: 8px;
+    border-radius: 10px;
+    border: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    color: white;
+    font-weight: bold;
+}
+
+.slot {
+    width: 90px;
+    height: 60px;
+    margin: 8px;
+    border: 2px dashed #aaa;
+    border-radius: 10px;
+}
+
+.slot.correct {
+    border-color: green;
+    background: #eaffea;
+}
+
+button {
+    padding: 10px 15px;
+    margin: 5px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>📅 Tage Super Spiel</h1>
+
+<div class="box">
+
+<button onclick="setLevel('easy')">😊 Easy</button> <button onclick="setLevel('medium')">😎 Medium</button> <button onclick="setLevel('hard')">🔥 Hard</button> <br><br>
+
+<button onclick="startGame()">🧩 Start</button> <button onclick="showHint()">💡 Hinweis</button>
+
+<p>🏆 Score: <span id="score">0</span></p>
+<p>⭐ Sterne: <span id="stars">0</span></p>
+<p>🏅 Badge: <span id="badge">-</span></p>
+
+<div id="game" style="display:none;">
+    <p>Ziehe die Tage richtig 👇</p>
+    <div id="dropzone" class="container"></div>
+    <hr>
+    <div id="days" class="container"></div>
+</div>
+
+<p id="result"></p>
+
+</div>
+
+<!-- 🎵 MUSIC -->
+
+<audio id="bgm" src="sounds/music.mp3" loop></audio>
+
+<script>
+// ================= DATA =================
+const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"];
+
+const colors = {
+    "Montag": "#6a5acd",
+    "Dienstag": "#ff7f50",
+    "Mittwoch": "#3cb371",
+    "Donnerstag": "#1e90ff",
+    "Freitag": "#ff69b4",
+    "Samstag": "#ffa500",
+    "Sonntag": "#dc143c"
+};
+
+let level = "easy";
+let score = 0;
+let stars = 0;
+let currentList = [];
+
+// ================= LEVEL =================
+function setLevel(l) {
+    level = l;
+    alert("Level: " + l);
+}
+
+// ================= START =================
+function startGame() {
+    document.getElementById("game").style.display = "block";
+    document.getElementById("result").innerText = "";
+
+    document.getElementById("bgm").play().catch(()=>{});
+
+    currentList = [...days];
+    if (level === "easy") currentList = days.slice(0,4);
+    if (level === "medium") currentList = days.slice(0,5);
+
+    let shuffled = [...currentList].sort(() => Math.random() - 0.5);
+
+    createSlots(currentList.length);
+    createDays(shuffled);
+}
+
+// ================= SLOTS =================
+function createSlots(count) {
+    let html = "";
+    for (let i = 0; i < count; i++) {
+        html += `<div class="slot" data-index="${i}"></div>`;
+    }
+    document.getElementById("dropzone").innerHTML = html;
+
+    document.querySelectorAll(".slot").forEach(slot => {
+        slot.addEventListener("dragover", e => e.preventDefault());
+
+        slot.addEventListener("drop", e => {
+            e.preventDefault();
+
+            const id = e.dataTransfer.getData("text");
+            const el = document.getElementById(id);
+            const index = slot.dataset.index;
+
+            // 🎯 MAGNETIC SNAP (only correct place!)
+            if (el.innerText === currentList[index]) {
+                slot.appendChild(el);
+                slot.classList.add("correct");
+                checkGame();
+            } else {
+                document.getElementById("result").innerText = "❌ Nicht hier!";
+            }
+        });
+    });
+}
+
+// ================= DAYS =================
+function createDays(list) {
+    let html = "";
+    list.forEach((d, i) => {
+        html += `<div class="day" draggable="true"
+        style="background:${colors[d]}"
+        id="d${i}">${d}</div>`;
+    });
+
+    document.getElementById("days").innerHTML = html;
+
+    document.querySelectorAll(".day").forEach(el => {
+        el.addEventListener("dragstart", e => {
+            e.dataTransfer.setData("text", el.id);
+            speak(el.innerText);
+        });
+    });
+}
+
+// ================= VOICE =================
+function speak(text) {
+    let msg = new SpeechSynthesisUtterance(text);
+    msg.lang = "de-DE";
+    speechSynthesis.speak(msg);
+}
+
+// ================= HINT =================
+function showHint() {
+    let slots = document.querySelectorAll(".slot");
+
+    for (let i = 0; i < slots.length; i++) {
+        if (!slots[i].firstChild) {
+            alert("👉 Nächster Tag: " + currentList[i]);
+            speak(currentList[i]);
+            break;
+        }
+    }
+}
+
+// ================= CHECK =================
+function checkGame() {
+    let placed = document.querySelectorAll(".slot .day").length;
+
+    if (placed !== currentList.length) return;
+
+    document.getElementById("result").innerText = "🎉 Perfekt!";
+
+    score++;
+    stars += level === "hard" ? 3 : level === "medium" ? 2 : 1;
+
+    updateBadge();
+
+    document.getElementById("score").innerText = score;
+    document.getElementById("stars").innerText = stars;
+
+    // ⬆️ NEXT LEVEL AUTO
+    if (level === "easy") level = "medium";
+    else if (level === "medium") level = "hard";
+
+    setTimeout(startGame, 1500);
+}
+
+// ================= BADGES =================
+function updateBadge() {
+    let badge = "-";
+
+    if (stars >= 3) badge = "🥉 Anfänger";
+    if (stars >= 6) badge = "🥈 Profi";
+    if (stars >= 10) badge = "🥇 Meister";
+
+    document.getElementById("badge").innerText = badge;
+}
+</script>
+<br><br>
+<a href="dashboard.html">⬅ Zurück</a>
+</body>
+</html>

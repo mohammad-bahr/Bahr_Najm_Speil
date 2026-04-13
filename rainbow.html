@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="UTF-8">
+<title>🌈 Rainbow Game</title>
+
+<style>
+body {
+    text-align: center;
+    font-family: Arial;
+    background: linear-gradient(135deg, #ffe29f, #ffa99f);
+}
+
+.box {
+    background: white;
+    padding: 30px;
+    margin: 50px auto;
+    width: 90%;
+	max-width: 700px;
+    border-radius: 15px;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+}
+
+.color-btn {
+    width: 60px;
+    height: 50px;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    margin: 10px;
+}
+
+.color {
+    width: 50px;
+    height: 50px;
+    margin: 5px;
+    border-radius: 10px;
+    border: 2px solid #333;
+    cursor: grab;
+}
+
+.color.dragging {
+    opacity: 0.5;
+}
+
+.slot {
+    width: 50px;
+    height: 50px;
+    margin: 5px;
+    border: 2px dashed #aaa;
+    border-radius: 10px;
+}
+
+.slot.hover {
+    border-color: green;
+    background: #eaffea;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>🌈 Rainbow Game</h1>
+
+<div class="box">
+
+<!-- MENU -->
+
+<div id="menu">
+    <button onclick="startQuiz()">🌈 Quiz</button>
+    <button onclick="startDrag()">🧩 Sort</button>
+    <br>
+    <button onclick="resetGame()">🔄 Reset</button>
+    <button onclick="toggleSound()">🔊 Sound</button>
+</div>
+
+<!-- QUIZ -->
+
+<div id="quiz" style="display:none;">
+    <p id="question"></p>
+    <div id="buttons"></div>
+</div>
+
+<!-- DRAG -->
+
+<div id="drag" style="display:none;">
+    <p>Drag colors into correct order</p>
+    <div id="dropzone" class="container"></div>
+    <hr>
+    <div id="colors" class="container"></div>
+</div>
+
+<p id="result"></p>
+<p>⭐ Score: <span id="score">0</span></p>
+
+</div>
+
+<!-- AUDIO -->
+
+<audio id="ok" src="sounds/success.mp3"></audio> <audio id="fail" src="sounds/error.mp3"></audio>
+
+<script>
+// DATA
+const colors = ["red","orange","yellow","green","blue","indigo","violet"];
+const names  = ["ROT","ORANGE","GELB","GRÜN","BLAU","INDIGO","VIOLETT"];
+
+let score = 0;
+let currentIndex = 0;
+let mode = "";
+let shuffled = [];
+let placed = [];
+let soundOn = true;
+
+// SOUND
+function playSound(id) {
+    if (!soundOn) return;
+    const audio = document.getElementById(id);
+    audio.currentTime = 0;
+    audio.play().catch(()=>{});
+}
+
+function toggleSound() {
+    soundOn = !soundOn;
+}
+
+// SPEECH
+function speak(text) {
+    speechSynthesis.cancel();
+    let msg = new SpeechSynthesisUtterance(text);
+    msg.lang = "de-DE";
+    speechSynthesis.speak(msg);
+}
+
+// RESET
+function resetGame() {
+    score = 0;
+    document.getElementById("score").innerText = score;
+    document.getElementById("result").innerText = "";
+
+    document.getElementById("menu").style.display = "block";
+    document.getElementById("quiz").style.display = "none";
+    document.getElementById("drag").style.display = "none";
+}
+
+// QUIZ
+function startQuiz() {
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("quiz").style.display = "block";
+    neueRunde();
+}
+
+function neueRunde() {
+    mode = Math.random() < 0.5 ? "next" : "before";
+    currentIndex = Math.floor(Math.random() * colors.length);
+
+    if (mode === "next" && currentIndex === colors.length - 1) currentIndex--;
+    if (mode === "before" && currentIndex === 0) currentIndex++;
+
+    let frage = mode === "next"
+        ? "Was kommt nach " + names[currentIndex] + "?"
+        : "Was kommt vor " + names[currentIndex] + "?";
+
+    document.getElementById("question").innerText = frage;
+    speak(frage);
+
+    let html = "";
+    colors.forEach((c, i) => {
+        html += `<button class="color-btn" style="background:${c}" onclick="checkAntwort(${i})"></button>`;
+    });
+
+    document.getElementById("buttons").innerHTML = html;
+}
+
+function checkAntwort(i) {
+    let correct = mode === "next" ? currentIndex + 1 : currentIndex - 1;
+
+    if (i === correct) {
+        document.getElementById("result").innerText = "🎉 Richtig!";
+        playSound("ok");
+        speak("Super!");
+        score++;
+    } else {
+        document.getElementById("result").innerText = "❌ Falsch!";
+        playSound("fail");
+        speak("Versuch es nochmal!");
+    }
+
+    document.getElementById("score").innerText = score;
+    setTimeout(neueRunde, 1200);
+}
+
+// DRAG & DROP (NEW CLEAN VERSION)
+function startDrag() {
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("drag").style.display = "block";
+
+    shuffled = [...colors].sort(() => Math.random() - 0.5);
+    placed = new Array(colors.length).fill(null);
+
+    createSlots();
+    createColors();
+}
+
+function createSlots() {
+    const dropzone = document.getElementById("dropzone");
+    dropzone.innerHTML = "";
+
+    for (let i = 0; i < colors.length; i++) {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+
+        slot.addEventListener("dragover", e => {
+            e.preventDefault();
+            slot.classList.add("hover");
+        });
+
+        slot.addEventListener("dragleave", () => {
+            slot.classList.remove("hover");
+        });
+
+        slot.addEventListener("drop", e => {
+            e.preventDefault();
+            slot.classList.remove("hover");
+
+            const id = e.dataTransfer.getData("text");
+            const el = document.getElementById(id);
+
+            if (slot.children.length === 0) {
+                slot.appendChild(el);
+                placed[i] = el.dataset.color;
+                checkDrag();
+            }
+        });
+
+        dropzone.appendChild(slot);
+    }
+}
+
+function createColors() {
+    const container = document.getElementById("colors");
+    container.innerHTML = "";
+
+    shuffled.forEach((c, i) => {
+        const el = document.createElement("div");
+        el.className = "color";
+        el.style.background = c;
+        el.id = "c" + i;
+        el.draggable = true;
+        el.dataset.color = c;
+
+        el.addEventListener("dragstart", e => {
+            e.dataTransfer.setData("text", el.id);
+            el.classList.add("dragging");
+        });
+
+        el.addEventListener("dragend", () => {
+            el.classList.remove("dragging");
+        });
+
+        container.appendChild(el);
+    });
+}
+
+function checkDrag() {
+    if (placed.includes(null)) return;
+
+    let korrekt = true;
+
+    for (let i = 0; i < colors.length; i++) {
+        if (placed[i] !== colors[i]) {
+            korrekt = false;
+            break;
+        }
+    }
+
+    if (korrekt) {
+        document.getElementById("result").innerText = "🎉 Perfekt!";
+        playSound("ok");
+        speak("Sehr gut!");
+        score++;
+    } else {
+        document.getElementById("result").innerText = "❌ Falsch!";
+        playSound("fail");
+        speak("Nicht ganz richtig!");
+    }
+
+    document.getElementById("score").innerText = score;
+}
+</script>
+
+</body>
+</html>

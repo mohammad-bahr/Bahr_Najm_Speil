@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+    text-align: center;
+    font-family: Arial;
+    background: linear-gradient(135deg, #ffe29f, #ffa99f);
+}
+
+.box {
+    background: white;
+    padding: 30px;
+    margin: 50px auto;
+    width: 350px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+#word {
+    font-size: 40px;
+    margin: 20px;
+}
+
+.color-btn {
+    width: 80px;
+    height: 50px;
+    margin: 5px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>🎨 Farbenspiel</h1>
+
+<div class="box">
+
+<p>Klicke die FARBE (nicht das Wort!)</p>
+
+<div id="word">ROT</div>
+
+<div>
+    <button class="color-btn" style="background:red" onclick="check('red')"></button>
+    <button class="color-btn" style="background:blue" onclick="check('blue')"></button>
+    <button class="color-btn" style="background:green" onclick="check('green')"></button>
+    <button class="color-btn" style="background:yellow" onclick="check('yellow')"></button>
+</div>
+
+<p id="result"></p>
+
+<p>⭐ Punkte: <span id="score">0</span></p>
+<p>⏱️ Zeit: <span id="time">30</span>s</p>
+
+</div>
+
+<!-- Sounds -->
+<audio id="ok" src="sounds/success.mp3"></audio>
+<audio id="fail" src="sounds/error.mp3"></audio>
+
+<!-- Konfetti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+let colors = ["red", "blue", "green", "yellow"];
+let names = ["ROT", "BLAU", "GRÜN", "GELB"];
+
+let correctColor;
+let score = 0;
+let time = 30;
+
+// 🎉 Konfetti
+function fireConfetti() {
+    if (typeof confetti === "function") {
+        confetti({ particleCount: 80, spread: 70 });
+    }
+}
+
+// 🔊 Stimme
+function speak(text) {
+    let msg = new SpeechSynthesisUtterance(text);
+    msg.lang = "de-DE";
+    speechSynthesis.speak(msg);
+}
+
+function newRound() {
+    let wordIndex = Math.floor(Math.random() * colors.length);
+    let colorIndex = Math.floor(Math.random() * colors.length);
+
+    document.getElementById("word").innerText = names[wordIndex];
+    document.getElementById("word").style.color = colors[colorIndex];
+
+    correctColor = colors[colorIndex];
+}
+
+function check(choice) {
+
+    if (choice === correctColor) {
+        document.getElementById("result").innerText = "🎉 Richtig!";
+        document.getElementById("ok").play().catch(()=>{});
+        speak("Super!");
+
+        score++;
+        fireConfetti();
+
+    } else {
+        document.getElementById("result").innerText = "❌ Falsch!";
+        document.getElementById("fail").play().catch(()=>{});
+        speak("Nochmal!");
+    }
+
+    document.getElementById("score").innerText = score;
+
+    newRound();
+}
+
+// ⏱️ Timer
+let timer = setInterval(() => {
+    time--;
+    document.getElementById("time").innerText = time;
+
+    if (time <= 0) {
+        clearInterval(timer);
+        document.getElementById("result").innerText = "⏰ Zeit vorbei!";
+        speak("Zeit vorbei!");
+    }
+}, 1000);
+
+// Start
+newRound();
+</script>
+
+<br><br>
+<a href="colors.html">⬅ Zurück</a>
+
+</body>
+</html>

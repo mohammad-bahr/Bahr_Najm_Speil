@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mathe Spiel</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        h1 { font-size: 32px; margin-top: 20px; }
+
+        .box {
+            background: white;
+            padding: 25px;
+            margin: 20px auto;
+            max-width: 300px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        #question { font-size: 28px; font-weight: bold; }
+
+        input {
+            font-size: 24px;
+            padding: 12px;
+            width: 100px;
+            text-align: center;
+            border-radius: 10px;
+            border: 2px solid #ccc;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 20px;
+            margin-top: 15px;
+            border-radius: 12px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px #2e7d32;
+        }
+
+        button:active { transform: translateY(2px); box-shadow: 0 2px #2e7d32; }
+
+        #result { font-size: 24px; margin-top: 15px; min-height: 30px; }
+
+        .back-link { display: inline-block; margin-top: 20px; color: #333; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+    <h1>➕➖ Mathe Spiel</h1>
+
+    <div class="box">
+        <p id="question">Laden...</p>
+        <input type="number" id="answer" pattern="\d*">
+        <br>
+        <button onclick="check()">OK</button>
+        <p id="result"></p>
+        <p>⭐ Punkte: <span id="score">0</span></p>
+        <p style="font-size:30px;">Sterne: <span id="stars"></span></p>
+        <p>📈 Level: <span id="level">1</span></p>
+    </div>
+
+    <audio id="ok" src="sounds/success.mp3"></audio>
+    <audio id="fail" src="sounds/error.mp3"></audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        // Deine Logik bleibt gleich
+        let num1, num2, operator, correct;
+        let score = 0;
+        let level = 1;
+
+        function updateStars() {
+            let stars = "⭐".repeat(score % 5);
+            document.getElementById("stars").innerText = stars;
+        }
+
+        function newQuestion() {
+            if (level < 4) {
+                let max = 5 + level * 5;
+                num1 = Math.floor(Math.random() * max) + 1;
+                num2 = Math.floor(Math.random() * max) + 1;
+                let ops = ['+', '-'];
+                operator = ops[Math.floor(Math.random() * ops.length)];
+                if (operator === '-' && num2 > num1) [num1, num2] = [num2, num1];
+                correct = operator === '+' ? num1 + num2 : num1 - num2;
+            } else {
+                num1 = 2;
+                num2 = Math.floor(Math.random() * 10) + 1;
+                operator = '×';
+                correct = num1 * num2;
+            }
+            document.getElementById("question").innerText = num1 + " " + operator + " " + num2 + " = ?";
+            document.getElementById("answer").value = "";
+            document.getElementById("answer").focus();
+        }
+
+        function speak(text) {
+            let msg = new SpeechSynthesisUtterance(text);
+            msg.lang = "de-DE";
+            window.speechSynthesis.speak(msg);
+        }
+
+        function check() {
+            let user = document.getElementById("answer").value;
+            if (user == correct) {
+                document.getElementById("result").innerText = "🎉 Super!";
+                document.getElementById("ok").play().catch(()=>{});
+                speak("Super gemacht!");
+                score++;
+                updateStars();
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                if (score % 5 === 0) {
+                    level++;
+                    document.getElementById("result").innerText = "🏆 Level Up!";
+                    speak("Level geschafft!");
+                }
+            } else {
+                document.getElementById("result").innerText = "❌ Nochmal!";
+                document.getElementById("fail").play().catch(()=>{});
+                speak("Versuch es nochmal!");
+            }
+            document.getElementById("score").innerText = score;
+            document.getElementById("level").innerText = level;
+            setTimeout(newQuestion, 1200);
+        }
+
+        document.getElementById("answer").addEventListener("keypress", (e) => { if (e.key === "Enter") check(); });
+        newQuestion();
+    </script>
+
+    <br>
+    <a href="games.html" class="back-link">⬅ Zurück</a>
+</body>
+</html>
